@@ -51,4 +51,4 @@ See `milestone-tracker.md` for a full breakdown.
 
 ## Contact
 
-Daoud | daoud@roboticapro.com
+Yahya Shafique | yahyashafique05@gmail.com
