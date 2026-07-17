@@ -1,0 +1,66 @@
+# Home Assistant Automation — VPD-driven fan control
+# Status: placeholder — finalize after component selection
+
+# This automation reads from the VPD template sensor (see template-sensors.yaml)
+# and sets the fan to LOW, HIGH, or OFF based on thresholds.
+# Hysteresis and anti-short-cycling are enforced via input_number helpers.
+
+automation:
+  - alias: "Rack VPD Fan Control"
+    description: "Adjusts exhaust fan speed based on calculated VPD"
+    mode: single           # prevents overlapping runs
+    trigger:
+      - platform: state
+        entity_id: sensor.rack_vpd  # from template-sensors.yaml
+    condition:
+      # Anti-short-cycling: don't act if fan changed state less than 5 minutes ago
+      - condition: template
+        value_template: >
+          {{ (now() - states.fan.rack_exhaust.last_changed).total_seconds() > 300 }}
+    action:
+      - choose:
+          # VPD too high — run fan at full speed
+          - conditions:
+              - condition: numeric_state
+                entity_id: sensor.rack_vpd
+                above: 1.2
+            sequence:
+              - service: fan.set_percentage
+                target:
+                  entity_id: fan.rack_exhaust
+                data:
+                  percentage: 100
+
+          # VPD in ideal range — run fan at low speed
+          - conditions:
+              - condition: numeric_state
+                entity_id: sensor.rack_vpd
+                above: 0.4
+                below: 1.2
+            sequence:
+              - service: fan.set_percentage
+                target:
+                  entity_id: fan.rack_exhaust
+                data:
+                  percentage: 30
+
+        # Default (VPD too low — too humid): fan off
+        default:
+          - service: fan.turn_off
+            target:
+              entity_id: fan.rack_exhaust
+
+  - alias: "Rack Sensor Offline Alert"
+    description: "Alerts if a sensor goes unavailable for more than 5 minutes"
+    trigger:
+      - platform: state
+        entity_id:
+          - sensor.rack_temperature
+          - sensor.rack_humidity
+        to: "unavailable"
+        for: "00:05:00"
+    action:
+      - service: persistent_notification.create
+        data:
+          title: "Rack Sensor Offline"
+          message: "{{ trigger.entity_id }} has been unavailable for 5 minutes. Check the device."

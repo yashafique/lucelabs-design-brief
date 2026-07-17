@@ -1,1 +1,46 @@
+# ESPHome Bridge Node — Non-native Sensor
+# Status: placeholder — fill in after sensor selection is finalized
 
+esphome:
+  name: rack-sensor-bridge
+  friendly_name: "Rack Sensor Bridge"
+
+esp32:
+  board: esp32dev  # update to match your actual board (e.g. seeed_xiao_esp32c3)
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  ap:
+    ssid: "Rack Bridge Fallback"
+    password: !secret ap_password
+
+captive_portal:
+
+logger:
+
+api:
+  encryption:
+    key: !secret api_key   # auto-generated; allows HA to discover this device
+
+ota:
+  password: !secret ota_password
+
+sensor:
+  # Placeholder — replace with your actual sensor component
+  # Example for a SHT31 (I2C temp/RH):
+  # - platform: sht3xd
+  #   temperature:
+  #     name: "Rack Temperature"
+  #     id: rack_temp
+  #   humidity:
+  #     name: "Rack Humidity"
+  #     id: rack_humidity
+  #   address: 0x44
+  #   update_interval: 30s
+
+i2c:
+  sda: GPIO21
+  scl: GPIO22
+  scan: true

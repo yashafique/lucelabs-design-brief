@@ -1,0 +1,22 @@
+# Template Sensors — VPD calculation
+# VPD (kPa) = (1 - RH/100) × 0.6108 × exp(17.27 × T / (T + 237.3))
+# Both sensor inputs required; if either is unavailable, VPD is marked unknown
+
+template:
+  - sensor:
+      - name: "Rack VPD"
+        unique_id: rack_vpd
+        unit_of_measurement: "kPa"
+        icon: mdi:leaf
+        state_class: measurement
+        state: >
+          {% set t = states('sensor.rack_temperature') | float(none) %}
+          {% set rh = states('sensor.rack_humidity') | float(none) %}
+          {% if t is none or rh is none %}
+            unknown
+          {% else %}
+            {{ ((1 - rh / 100) * 0.6108 * (2.71828 ** (17.27 * t / (t + 237.3)))) | round(3) }}
+          {% endif %}
+        availability: >
+          {{ states('sensor.rack_temperature') not in ['unavailable', 'unknown', 'none']
+             and states('sensor.rack_humidity') not in ['unavailable', 'unknown', 'none'] }}
