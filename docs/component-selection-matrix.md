@@ -40,8 +40,8 @@ This sensor plugs into the same ESP32 as the moisture sensor. No extra hardware 
 |---|---|---|---|
 | **Product** | Adafruit Waterproof DS18B20 Temp Sensor | DFRobot Waterproof DS18B20 (DFR0198) | Seeed Grove DHT20 Temp + Humidity |
 | **Vendor** | Adafruit | DFRobot | Seeed Studio |
-| **Price** | $9.95 | $9-12 via distributors | $4-6 |
-| **Link** | [adafruit.com/product/381](https://www.adafruit.com/product/381) | [dfrobot.com/product-689)](https://www.dfrobot.com/product-689.html) |[ [seeedstudio.com/Grove-Temperature-Humidity-Sensor-V2-0-DHT20](https://www.seeedstudio.com/Grove-Temperature-Humidity-Sensor-V2-0-DHT20-p-4967.html?srsltid=AfmBOopA1hSmKQyWOShcOMEyVEURTUnyo936wlyeZ1ju2JuFtBjgMYoC)|
+| **Price** | $9.95 | $6.90 | $6.50 |
+| **Link** | [adafruit.com/product/381](https://www.adafruit.com/product/381) | [dfrobot.com/product-689](https://www.dfrobot.com/product-689.html) |[seeedstudio.com/Temperature-Humidity-Sensor-DHT20](https://www.seeedstudio.com/Grove-Temperature-Humidity-Sensor-V2-0-DHT20-p-4967.html?srsltid=AfmBOopA1hSmKQyWOShcOMEyVEURTUnyo936wlyeZ1ju2JuFtBjgMYoC)|
 | **How it connects to HA** | Single wire to ESP32; built-in ESPHome support; shares same ESP32 as moisture sensor | Same as Option A | I2C wire to same ESP32 |
 | **Accuracy** | +/- 0.5 C across most of its range | Same chip, same specs | +/- 0.3 C typical; also reads humidity |
 | **21-day reliability** | Excellent; waterproof stainless steel probe; Adafruit screens for counterfeit chips | Good; same chip; less screening | No waterproofing; exposed to water splash |
@@ -62,8 +62,9 @@ The relay is a smart switch that turns the pump on and off. Home Assistant contr
 |---|---|---|---|
 | **Product** | Shelly 1PM Gen3 | Sonoff BASIC R4 | Sonoff MINIR4M (Matter) |
 | **Vendor** | Shelly USA | Sonoff | Sonoff |
-| **Price** | $19.24 (currently 30% off) | $7-10 | $12-15 |
-| **Link** | [us.shelly.com/products/shelly-1pm-gen3](https://us.shelly.com/products/shelly-1pm-gen3) | [itead.cc/product/sonoff-basicr4-wi-fi-smart-switch](https://itead.cc/product/sonoff-basicr4-wi-fi-smart-switch/) | [sonoff.tech](https://sonoff.tech) |
+| **Price** | $19.24 (30% off) | $6.99 | $12.90 |
+| **Link** | [us.shelly.com/products/shelly-1pm-gen3](https://us.shelly.com/products/shelly-1pm-gen3) | [itead.cc/product/sonoff-basicr4-wi-fi-smart-switch](https://sonoff.tech/en-us/products/sonoff-basicr4-wi-fi-smart-switch?srsltid=AfmBOornI_EP4VBbvvcLpmcURMTVKJSVbjqBVnCAoleeYFtOeJ4c_EhD) | [sonoff.tech] 
+(https://sonoff.tech/en-us/products/sonoff-mini-extreme-wi-fi-smart-switch-matter-enabled?srsltid=AfmBOorTITFxDPmlVwKWVBy27ghJqY56CQc_J_MPe3VA-Tzh5tOVANj1)|
 | **How it connects to HA** | WiFi; native HA integration; works without internet | WiFi; requires cloud account or firmware swap for local use | WiFi + Matter; works without internet |
 | **Max load** | 16A | 10A | 10A |
 | **Power monitoring** | Yes; built-in watt meter; can detect if pump actually ran | No | No |
