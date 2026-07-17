@@ -1,4 +1,4 @@
-# Luce Labs - Sensing and Actuation Rack Slice
+# Luce Labs - Sensor & Actuator Module
 **Candidate Design Brief Submission**
 Robotics and Embedded Engineering Intern
 
