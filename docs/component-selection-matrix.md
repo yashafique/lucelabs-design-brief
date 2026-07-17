@@ -63,8 +63,7 @@ The relay is a smart switch that turns the pump on and off. Home Assistant contr
 | **Product** | Shelly 1PM Gen3 | Sonoff BASIC R4 | Sonoff MINIR4M (Matter) |
 | **Vendor** | Shelly USA | Sonoff | Sonoff |
 | **Price** | $19.24 (30% off) | $6.99 | $12.90 |
-| **Link** | [us.shelly.com/products/shelly-1pm-gen3](https://us.shelly.com/products/shelly-1pm-gen3) | [itead.cc/product/sonoff-basicr4-wi-fi-smart-switch](https://sonoff.tech/en-us/products/sonoff-basicr4-wi-fi-smart-switch?srsltid=AfmBOornI_EP4VBbvvcLpmcURMTVKJSVbjqBVnCAoleeYFtOeJ4c_EhD) | [sonoff.tech] 
-(https://sonoff.tech/en-us/products/sonoff-mini-extreme-wi-fi-smart-switch-matter-enabled?srsltid=AfmBOorTITFxDPmlVwKWVBy27ghJqY56CQc_J_MPe3VA-Tzh5tOVANj1)|
+| **Link** | [us.shelly.com/products/shelly-1pm-gen3](https://us.shelly.com/products/shelly-1pm-gen3) | [itead.cc/product/sonoff-basicr4-wi-fi-smart-switch](https://sonoff.tech/en-us/products/sonoff-basicr4-wi-fi-smart-switch?srsltid=AfmBOornI_EP4VBbvvcLpmcURMTVKJSVbjqBVnCAoleeYFtOeJ4c_EhD) |[sonoff.tech/prodcuts/Mini-Extreme-WI-Fi-Smart-Switch](https://sonoff.tech/en-us/products/sonoff-mini-extreme-wi-fi-smart-switch-matter-enabled?srsltid=AfmBOorTITFxDPmlVwKWVBy27ghJqY56CQc_J_MPe3VA-Tzh5tOVANj1)|
 | **How it connects to HA** | WiFi; native HA integration; works without internet | WiFi; requires cloud account or firmware swap for local use | WiFi + Matter; works without internet |
 | **Max load** | 16A | 10A | 10A |
 | **Power monitoring** | Yes; built-in watt meter; can detect if pump actually ran | No | No |
