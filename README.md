@@ -1,54 +1,54 @@
-# Luce Labs — Sensing & Actuation Rack Slice
-**Candidate Design Brief Submission**  
-Robotics & Embedded Engineering Intern
+# Luce Labs - Sensing and Actuation Rack Slice
+**Candidate Design Brief Submission**
+Robotics and Embedded Engineering Intern
 
 ---
 
 ## What this is
 
-A complete design for one sensing-and-actuation slice of a controlled growing rack, built within the Luce Labs IRIS architecture:
+This design controls one slice of a growing rack. It reads two things from the environment and uses both readings together to decide when to run an irrigation pump.
 
-- **Two sensed parameters:** Air Temperature + Relative Humidity
-- **Derived control variable:** VPD (Vapour Pressure Deficit) — a single number combining both inputs
-- **One actuator:** Exhaust fan (speed-controlled)
-- **Control logic lives in:** Home Assistant (on-site, unattended 21-day operation)
+- **Moisture sensor:** reads how wet or dry the soil is
+- **Temperature sensor:** reads how hot it is near the plant
+- **Pump relay:** turns the irrigation pump on or off
+- **Control logic:** lives inside Home Assistant, running on-site
 
-The design favors off-the-shelf components connected over open protocols, with one non-native sensor bridged cleanly into HA via ESP32 + ESPHome.
+Both sensor readings feed one decision together. Hot and dry soil triggers a longer watering cycle. Cool and moist soil skips irrigation entirely.
 
 ---
 
-## Repo structure
+## Folder structure
 
 ```
 /docs
-  component-selection-matrix.md   ← sensor & actuator sourcing, scoring, buy-vs-build
-  integration-and-control.md      ← block diagram, bridging design, control logic, failure modes
-  ai-usage-appendix.md            ← AI tools used, real prompts, where AI was wrong
+  component-selection-matrix.md   - product options, scores, and final picks
+  integration-and-control.md      - how everything connects, control logic, failure responses
+  ai-usage-appendix.md            - AI tools used, real prompts, one case where AI was wrong
 
 /ha-config
-  esphome-bridge.yaml             ← firmware config for the ESP32 bridge node
-  automation.yaml                 ← HA automation implementing VPD → fan control
-  template-sensors.yaml           ← VPD calculation and helper sensors
-  dashboard.yaml                  ← Lovelace dashboard sketch
+  esphome-bridge.yaml             - config that makes the moisture sensor work with Home Assistant
+  automation.yaml                 - the automation that runs the pump based on sensor readings
+  template-sensors.yaml           - helper calculations
+  dashboard.yaml                  - simple visual display in Home Assistant
 
-README.md                         ← this file
-milestone-tracker.md              ← time log and progress tracking
+README.md                         - this file
+milestone-tracker.md              - time log
 ```
 
 ---
 
-## How to review the design
+## Where to start reading
 
-Start with **`/docs/integration-and-control.md`** for the block diagram and system overview, then **`/docs/component-selection-matrix.md`** for sourcing decisions, then **`/ha-config/`** for the working configuration files.
+Open `/docs/integration-and-control.md` first for the big picture. Then `/docs/component-selection-matrix.md` for the product choices. Then `/ha-config/` for the actual working code.
 
 ---
 
 ## Time spent
 
-*See `milestone-tracker.md` for a phase-by-phase breakdown.*
+See `milestone-tracker.md` for a full breakdown.
 
 ---
 
 ## Contact
 
-Yahya Shafique | Yahyashafique05@gmail.com
+Daoud | daoud@roboticapro.com
