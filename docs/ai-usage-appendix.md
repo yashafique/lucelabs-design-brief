@@ -34,9 +34,15 @@ What it produced and how I used/modified it: TBD
 
 ## Where AI was wrong — and how I caught it
 
-*(Fill this in as you work — keep a note every time AI gives you a product, link, or HA integration that turns out to be wrong or made up. This is one of the most important parts of the appendix.)*
+**Case 1: Outdated ESPHome syntax for the DS18B20 temperature sensor**
 
-**Example of the kind of thing to watch for:** AI suggested a specific Zigbee sensor with a real-sounding part number — when I opened the link, the product didn't exist at that vendor. I found it by manually checking every link in the component matrix.
+The first ESPHome YAML Claude generated used `platform: dallas` for the DS18B20. That syntax was removed in ESPHome v2024.6.0. Any ESPHome install from mid-2024 onward will throw a compile error on that config. The correct current syntax requires a `one_wire:` bus block and `platform: dallas_temp` under it.
+
+How I caught it: I cross-checked the generated YAML against the current ESPHome documentation before committing it. The ESPHome changelog for v2024.6.0 explicitly lists the dallas platform removal as a breaking change.
+
+What I did: rewrote the YAML block with the correct one_wire syntax and added a comment in the file explaining the change, so anyone reviewing the config understands why it differs from older examples they might find online.
+
+*(Add more cases here as you work through the rest of the config)*
 
 ---
 
