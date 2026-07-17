@@ -1,12 +1,17 @@
-# ESPHome Bridge Node — Non-native Sensor
-# Status: placeholder — fill in after sensor selection is finalized
+# ESPHome Bridge Node
+# Reads the DFRobot SEN0193 moisture sensor (analog) and the DS18B20 temperature probe (1-Wire).
+# Both sensors appear in Home Assistant as native entities once this device connects to WiFi.
+#
+# Note on DS18B20 syntax: as of ESPHome v2024.6.0, the old "platform: dallas" syntax was removed.
+# The correct current syntax uses a "one_wire:" bus block and "platform: dallas_temp".
+# Using the old syntax will cause a compile error on any ESPHome version from mid-2024 onward.
 
 esphome:
   name: rack-sensor-bridge
   friendly_name: "Rack Sensor Bridge"
 
 esp32:
-  board: esp32dev  # update to match your actual board (e.g. seeed_xiao_esp32c3)
+  board: esp32dev  # swap to your actual board if different, e.g. seeed_xiao_esp32c3
 
 wifi:
   ssid: !secret wifi_ssid
@@ -22,25 +27,49 @@ logger:
 
 api:
   encryption:
-    key: !secret api_key   # auto-generated; allows HA to discover this device
+    key: !secret api_key
 
 ota:
-  password: !secret ota_password
+  - platform: esphome
+    password: !secret ota_password
 
+# ---
+# Moisture sensor: DFRobot SEN0193
+# Wired to GPIO34 (ADC-capable pin on ESP32).
+# Raw reading: ~3100 in air (dry), ~1200 fully submerged (wet).
+# The filters block converts the raw ADC value to a 0-100% moisture scale.
+# Calibrate the dry_value and wet_value against your actual soil and substrate.
+# ---
 sensor:
-  # Placeholder — replace with your actual sensor component
-  # Example for a SHT31 (I2C temp/RH):
-  # - platform: sht3xd
-  #   temperature:
-  #     name: "Rack Temperature"
-  #     id: rack_temp
-  #   humidity:
-  #     name: "Rack Humidity"
-  #     id: rack_humidity
-  #   address: 0x44
-  #   update_interval: 30s
+  - platform: adc
+    pin: GPIO34
+    name: "Rack Soil Moisture"
+    id: rack_moisture
+    unit_of_measurement: "%"
+    icon: mdi:water-percent
+    update_interval: 60s
+    attenuation: 11db          # needed for GPIO34 to read up to 3.3V
+    filters:
+      - calibrate_linear:
+          - 3.10 -> 0.0        # dry: replace 3.10 with your actual dry reading in volts
+          - 1.20 -> 100.0      # wet: replace 1.20 with your actual wet reading in volts
+      - clamp:
+          min_value: 0
+          max_value: 100
 
-i2c:
-  sda: GPIO21
-  scl: GPIO22
-  scan: true
+# ---
+# Temperature sensor: DS18B20 waterproof probe
+# Uses the one_wire component (required as of ESPHome v2024.6.0).
+# The probe shares a single GPIO pin with a 4.7k pull-up resistor to 3.3V.
+# ---
+one_wire:
+  - platform: gpio
+    pin: GPIO4
+
+  - platform: dallas_temp
+    address: 0x0000000000000000  # replace with your sensor's actual 64-bit address
+    name: "Rack Temperature"
+    id: rack_temperature
+    unit_of_measurement: "°C"
+    accuracy_decimals: 1
+    update_interval: 60s
