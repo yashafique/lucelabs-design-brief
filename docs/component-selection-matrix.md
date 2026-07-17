@@ -41,7 +41,7 @@ This sensor plugs into the same ESP32 as the moisture sensor. No extra hardware 
 | **Product** | Adafruit Waterproof DS18B20 Temp Sensor | DFRobot Waterproof DS18B20 (DFR0198) | Seeed Grove DHT20 Temp + Humidity |
 | **Vendor** | Adafruit | DFRobot | Seeed Studio |
 | **Price** | $9.95 | $9-12 via distributors | $4-6 |
-| **Link** | [adafruit.com/product/381](https://www.adafruit.com/product/381) | [dfrobot.com](https://www.dfrobot.com) | [seeedstudio.com](https://seeedstudio.com) |
+| **Link** | [adafruit.com/product/381](https://www.adafruit.com/product/381) | [dfrobot.com/product-689)](https://www.dfrobot.com/product-689.html) |[ [seeedstudio.com/Grove-Temperature-Humidity-Sensor-V2-0-DHT20](https://www.seeedstudio.com/Grove-Temperature-Humidity-Sensor-V2-0-DHT20-p-4967.html?srsltid=AfmBOopA1hSmKQyWOShcOMEyVEURTUnyo936wlyeZ1ju2JuFtBjgMYoC)|
 | **How it connects to HA** | Single wire to ESP32; built-in ESPHome support; shares same ESP32 as moisture sensor | Same as Option A | I2C wire to same ESP32 |
 | **Accuracy** | +/- 0.5 C across most of its range | Same chip, same specs | +/- 0.3 C typical; also reads humidity |
 | **21-day reliability** | Excellent; waterproof stainless steel probe; Adafruit screens for counterfeit chips | Good; same chip; less screening | No waterproofing; exposed to water splash |
