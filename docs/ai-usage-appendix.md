@@ -7,6 +7,7 @@
 | Claude (claude.ai) | 	Repo structure, milestone planning, ESPHome and Home Assistant YAML, control logic validation |
 | Gemini (gemini.com) | Sourcing research, GitHub workflow guidance, bench-test drafting |
 | Whimsical (whimsical.com) | Final system diagram for the integration and control design |
+|Docker (docker.com)| HA Instance testing platform |
 
 ---
 
