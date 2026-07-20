@@ -1,18 +1,17 @@
 # Component Selection Matrix
 
-*Status: Complete. All links verified July 2026.*
 
 ---
 
 ## Design summary
 
-**Moisture sensor** reads whether the soil is dry. **Temperature sensor** reads how hot it is. Together they control one output: the irrigation pump. Hot and dry soil means a longer watering cycle. Cool and moist soil means the pump stays off. Both readings drive the same decision; this is not two separate loops.
+**Moisture sensor** reads whether the soil is dry. **Temperature sensor** reads how hot it is at the root zone. Together they control one output: the irrigation pump. Moisture decides whether to water at all. Temperature decides how long the cycle runs, because warmer air pulls water out of the substrate faster. Both readings drive the same decision.
 
 ---
 
-## Sensor 1 - Substrate Moisture (non-native; bridged through ESP32)
+## Sensor 1 - Substrate Moisture
 
-This is the required non-native sensor. It puts out a plain electrical voltage, not a WiFi or Zigbee signal. A small microcontroller (ESP32) reads that voltage and translates it into something Home Assistant can understand.
+This sensor is not a smart device. It puts out a plain electrical voltage, not a WiFi or Zigbee signal. A small microcontroller (ESP32) reads that voltage and translates it into a value Home Assistant can use.
 
 | | **Option A** | **Option B** | **Option C** |
 |---|---|---|---|
@@ -20,59 +19,73 @@ This is the required non-native sensor. It puts out a plain electrical voltage, 
 | **Vendor** | Adafruit | DFRobot | Seeed Studio |
 | **Price** | $7.50 | $5.90 | $9.90 |
 | **Link** | [adafruit.com/product/4026](https://www.adafruit.com/product/4026) | [dfrobot.com/product-1385.html](https://www.dfrobot.com/product-1385.html) | [seeedstudio.com/XIAO-Soil-Sensor-p-6452.html](https://www.seeedstudio.com/XIAO-Soil-Sensor-p-6452.html) |
-| **How it connects to HA** | I2C wire to ESP32; requires a custom driver; appears in HA as a sensor | Analog voltage to ESP32 pin; standard ESPHome config; appears in HA as a sensor | Comes pre-programmed with WiFi; shows up in HA automatically |
-| **Reading quality** | Relative moisture units (200-2000); also reads temperature | Relative moisture voltage (1.2-2.5V); no metal exposed; corrosion-resistant | Three levels only: dry, almost dry, normal |
-| **21-day reliability** | Good; no metal corrosion risk; needs a non-standard driver | Good; simplest wiring; no firmware complications | Best; battery-powered; pre-calibrated |
+| **How it reaches HA** | I2C to ESP32; needs a custom external component; then a HA entity | Analog voltage to ESP32 ADC pin; standard ESPHome `adc` block; then a HA entity | Pre-flashed firmware; joins HA over WiFi on its own |
+| **Reading quality** | Relative units 200-2000; also reports temperature | Relative voltage 1.2-3.1V; qualitative, not calibrated volumetric water content | Three states only: dry, almost dry, normal |
+| **21-day reliability** | Good; capacitive, so no metal corrosion. Depends on a third-party component staying maintained | Good; capacitive, no corrosion. No firmware layer to break | Good; but the sensing element and the radio fail together |
 | **Total cost** | $7.50 + $6 ESP32 = $13.50 | $5.90 + $6 ESP32 = $11.90 | $9.90 all-in |
 | **Availability** | In stock | In stock | In stock |
 
 **Selected: DFRobot SEN0193 (Option B)**
 
-It outputs a simple voltage that requires no special driver and no workarounds. You wire it to the ESP32, write a short config in ESPHome, and it shows up in Home Assistant like any other sensor. This is exactly the bridging work the brief is testing. Option A has a chip with non-standard registers that ESPHome does not fully support. Option C comes pre-programmed and auto-connects to HA; it skips the bridging challenge entirely and defeats the purpose of the exercise.
+Three reasons, in order of weight.
+
+First, the signal path is fully inspectable. It is a voltage on a wire. If the reading looks wrong I can put a meter on it and know within a minute whether the fault is the probe, the wiring, or the calibration. Options A and C both hide the sensing element behind firmware I did not write and cannot easily probe.
+
+Second, it has no software dependency. The Adafruit STEMMA needs a community-maintained external component because its I2C registers are not covered by stock ESPHome. That is a maintenance liability on a rack expected to run unattended, and it puts a third party between me and a working sensor.
+
+Third, replaceability. At $5.90 with two wires and a power pin, this part can be swapped by anyone with no reflashing and no HA changes, because the entity is defined on the ESP32, not on the probe. The Seeed XIAO is the opposite: swapping it means re-onboarding a new WiFi device.
+
+The tradeoff I am accepting is that Option C would be less work to set up and Option A gives a second temperature reading for free. Neither outweighs owning the signal path.
 
 ---
 
-## Sensor 2 - Air Temperature (natively supported)
+## Sensor 2 - Root Zone Temperature
 
-This sensor plugs into the same ESP32 as the moisture sensor. No extra hardware needed.
+This sensor shares the same ESP32 as the moisture probe, so it adds no hardware beyond the part itself.
 
 | | **Option A** | **Option B** | **Option C** |
 |---|---|---|---|
-| **Product** | Adafruit Waterproof DS18B20 Temp Sensor | DFRobot Waterproof DS18B20 (DFR0198) | Seeed Grove DHT20 Temp + Humidity |
+| **Product** | Adafruit Waterproof DS18B20 Probe | DFRobot Waterproof DS18B20 (DFR0198) | Seeed Grove DHT20 Temp + Humidity |
 | **Vendor** | Adafruit | DFRobot | Seeed Studio |
-| **Price** | $9.95 | $6.90 | $6.50 |
-| **Link** | [adafruit.com/product/381](https://www.adafruit.com/product/381) | [dfrobot.com/product-689](https://www.dfrobot.com/product-689.html) |[seeedstudio.com/Temperature-Humidity-Sensor-DHT20](https://www.seeedstudio.com/Grove-Temperature-Humidity-Sensor-V2-0-DHT20-p-4967.html?srsltid=AfmBOopA1hSmKQyWOShcOMEyVEURTUnyo936wlyeZ1ju2JuFtBjgMYoC)|
-| **How it connects to HA** | Single wire to ESP32; built-in ESPHome support; shares same ESP32 as moisture sensor | Same as Option A | I2C wire to same ESP32 |
-| **Accuracy** | +/- 0.5 C across most of its range | Same chip, same specs | +/- 0.3 C typical; also reads humidity |
-| **21-day reliability** | Excellent; waterproof stainless steel probe; Adafruit screens for counterfeit chips | Good; same chip; less screening | No waterproofing; exposed to water splash |
-| **Total cost** | No added cost; shares the ESP32 already purchased | No added cost | No added cost |
-| **Availability** | Out of stock at Adafruit; order through DigiKey link on product page | In stock via RS/Mouser | In stock |
+| **Price** | $9.95 | $9-12 via distributors | $4-6 |
+| **Link** | [adafruit.com/product/381](https://www.adafruit.com/product/381) | [dfrobot.com](https://www.dfrobot.com) | [seeedstudio.com](https://seeedstudio.com) |
+| **How it reaches HA** | 1-Wire to a single ESP32 GPIO; ESPHome `one_wire` bus with a `dallas_temp` sensor; then a HA entity | Same chip, same path | I2C to the same ESP32 |
+| **Accuracy** | +/- 0.5 C over the range that matters here | Same chip, same spec | +/- 0.3 C, and adds humidity |
+| **21-day reliability** | Strong; sealed stainless probe rated for continuous burial and immersion. Adafruit screens for counterfeit chips, which are common on this part | Same chip; less screening | Not waterproof; will not survive at substrate level near an irrigation line |
+| **Total cost** | No added cost; shares the ESP32 | No added cost | No added cost |
+| **Availability** | Out of stock at Adafruit; orderable through the DigiKey link on the product page | In stock via RS and Mouser | In stock |
 
-**Selected: DS18B20 via DigiKey (Option A)**
+**Selected: DS18B20 waterproof probe, ordered via DigiKey (Option A)**
 
-The probe is waterproof and can sit in the soil right next to the moisture sensor. It measures temperature where it actually matters for irrigation decisions, not ambient air temperature. ESPHome has built-in support; no custom driver needed. Important note: Adafruit's own page shows this out of stock; you must click through to DigiKey. The matrix AI check caught this discrepancy on manual verification.
+The decision here is placement, not accuracy. All three options are accurate enough for a decision that only sorts temperature into three bands. What matters is that the probe sits in the substrate next to the moisture sensor, because root zone temperature is what drives evaporation from the medium; ambient air temperature at the top of a rack can be several degrees off. Only the sealed probe formats survive that placement. The DHT20 is cheaper and adds humidity, but it would have to be mounted away from the water, which measures the wrong thing.
+
+Between the two DS18B20 options I chose the Adafruit part specifically because counterfeit DS18B20 chips are widespread and behave badly at the edges of their range. Adafruit screens for this, meaning that is worth a few dollars on a part that runs unattended for three weeks.
+
+Note on stock: Adafruit's own page currently shows this out of stock and routes to DigiKey. Budget for the longer lead time or order the DFRobot equivalent.
 
 ---
 
 ## Actuator - Irrigation Pump Relay
 
-The relay is a smart switch that turns the pump on and off. Home Assistant controls the relay; the relay controls the pump.
+The relay is the smart switch. Home Assistant controls the relay; the relay switches mains power to the pump.
 
 | | **Option A** | **Option B** | **Option C** |
 |---|---|---|---|
 | **Product** | Shelly 1PM Gen3 | Sonoff BASIC R4 | Sonoff MINIR4M (Matter) |
-| **Vendor** | Shelly USA | Sonoff | Sonoff |
-| **Price** | $19.24 (30% off) | $6.99 | $12.90 |
-| **Link** | [us.shelly.com/products/shelly-1pm-gen3](https://us.shelly.com/products/shelly-1pm-gen3) | [itead.cc/product/sonoff-basicr4-wi-fi-smart-switch](https://sonoff.tech/en-us/products/sonoff-basicr4-wi-fi-smart-switch?srsltid=AfmBOornI_EP4VBbvvcLpmcURMTVKJSVbjqBVnCAoleeYFtOeJ4c_EhD) |[sonoff.tech/prodcuts/Mini-Extreme-WI-Fi-Smart-Switch](https://sonoff.tech/en-us/products/sonoff-mini-extreme-wi-fi-smart-switch-matter-enabled?srsltid=AfmBOorTITFxDPmlVwKWVBy27ghJqY56CQc_J_MPe3VA-Tzh5tOVANj1)|
-| **How it connects to HA** | WiFi; native HA integration; works without internet | WiFi; requires cloud account or firmware swap for local use | WiFi + Matter; works without internet |
+| **Vendor** | Shelly | Sonoff | Sonoff |
+| **Price** | $19.24 | $7-10 | $12-15 |
+| **Link** | [us.shelly.com/products/shelly-1pm-gen3](https://us.shelly.com/products/shelly-1pm-gen3) | [itead.cc/product/sonoff-basicr4-wi-fi-smart-switch](https://itead.cc/product/sonoff-basicr4-wi-fi-smart-switch/) | [sonoff.tech](https://sonoff.tech) |
+| **How it reaches HA** | WiFi; built-in Shelly integration; runs entirely on the local network | WiFi; routes through the vendor cloud unless reflashed with Tasmota | WiFi and Matter; local |
 | **Max load** | 16A | 10A | 10A |
-| **Power monitoring** | Yes; built-in watt meter; can detect if pump actually ran | No | No |
-| **21-day reliability** | Excellent; no internet needed; 3-year warranty; built-in overload protection | Good; cloud dependency is a risk for unattended use | Good; Matter is local; newer product with less track record |
+| **Power monitoring** | Yes | No | No |
+| **21-day reliability** | Strong; no internet dependency, overload and thermal protection, 3-year warranty | Cloud dependency is a real outage risk for unattended operation | Local, but a newer product with less field history |
 | **Availability** | In stock | In stock | In stock |
 
 **Selected: Shelly 1PM Gen3 (Option A)**
 
-It works fully without an internet connection. If the WiFi router loses internet for a day, the automation keeps running. The built-in power meter lets Home Assistant confirm the pump actually turned on and is drawing power; this enables real failure detection. The Sonoff R4 needs either a cloud account or a firmware swap to work locally. The MINIR4M is newer and has less real-world history.
+The power meter is the reason, and it is not a nice to have. Without it, "pump on" means only that Home Assistant sent a command. With it, HA can confirm the pump actually drew current, which is the difference between believing the plant got watered and knowing it did. Over 21 days unattended, a pump that fails silently is the worst realistic failure in this design, because nothing else in the system would notice. 
+
+The Sonoff R4 is half the price but routes through a vendor cloud by default, making it local means reflashing it, which adds a failure point and voids the simple story. The MINIR4M is local and cheaper, but has no current sensing, so I would be trading away the failure detection to save seven dollars on a rack running unattended.
 
 ---
 
@@ -82,18 +95,18 @@ It works fully without an internet connection. If the WiFi router loses internet
 |---|---|---|
 | Moisture sensor | DFRobot SEN0193 | $5.90 |
 | Temperature sensor | DS18B20 waterproof probe | $9.95 |
-| Bridge (ESP32 board) | Generic ESP32 dev board | ~$6.00 |
+| Bridge | Generic ESP32 dev board | ~$6.00 |
 | Pump relay | Shelly 1PM Gen3 | $19.24 |
 | **Total** | | **~$41** |
 
 ---
 
-## Weakest buy and build fallback
+## Weakest buy, and when I would build instead
 
-**Weakest component:** DFRobot SEN0193 moisture sensor.
+**Weakest component: the SEN0193 moisture sensor.**
 
-The SEN0193 gives a relative reading; it can tell you the soil got wetter or drier, but it cannot tell you the exact percentage of water in the soil. The reading also shifts depending on soil type and how deep the probe is inserted. For basic irrigation triggering this is acceptable, but it is not research-grade.
+It reports a relative value, not a real one. It can tell me the soil got wetter or drier than it was; it cannot tell me the substrate is at 22% volumetric water content. The reading also shifts with substrate type, insertion depth, and to a lesser degree temperature. For a binary "is it dry enough to water" trigger with a wide deadband, that is acceptable. It is not acceptable for anything quantitative.
 
-**When to build instead:** If the project needed precise, calibrated moisture levels (for example, to compare results across different soil types or to dose nutrients accurately), the SEN0193 would not be reliable enough. That is the threshold.
+**The threshold:** I would stop buying and start building the moment a decision downstream needs a number rather than a direction. Two concrete triggers: nutrient dosing calculated from water content, or comparing moisture behaviour across racks running different substrates. Either one makes an uncalibrated relative reading actively misleading rather than merely imprecise.
 
-**Build fallback:** Keep the same ESP32. Replace the SEN0193 with a bare capacitive sensor circuit wired to the same analog pin. Add a three-point calibration routine in ESPHome (measure in air, in dry soil, in saturated soil) to map raw readings to real moisture percentages. This takes roughly two extra hours per sensor type but produces a calibration that holds across soil conditions. The rest of the design stays the same.
+**The build fallback:** Keep the ESP32 and the entity contract exactly as they are. Replace the probe with a bare capacitive front end on the same ADC pin, and add a three-point calibration in ESPHome: reading in air, in oven-dried substrate, and in fully saturated substrate, stored per substrate type. That turns the raw value into a defensible water content curve. Roughly two hours per substrate type, and it has to be redone whenever the medium changes, which is the real ongoing cost and the reason not to do it until the threshold above is actually crossed.
