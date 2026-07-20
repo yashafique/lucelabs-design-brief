@@ -25,17 +25,17 @@ This sensor is not a smart device. It puts out a plain electrical voltage, not a
 | **Total cost** | $7.50 + $6 ESP32 = $13.50 | $5.90 + $6 ESP32 = $11.90 | $9.90 all-in |
 | **Availability** | In stock | In stock | In stock |
 
-**Selected: DFRobot SEN0193 (Option B)**
+**Selected: DFRobot SEN0193 - Non-Native (Option B)**
 
-Three reasons, in order of weight.
 
-First, the signal path is fully inspectable. It is a voltage on a wire. If the reading looks wrong I can put a meter on it and know within a minute whether the fault is the probe, the wiring, or the calibration. Options A and C both hide the sensing element behind firmware I did not write and cannot easily probe.
+First, the signal path is fully inspectable. It is a voltage on a wire. If the reading looks wrong I can put a meter on it and know if the fault is the probe, the wiring, or the calibration. 
+Options A and C both hide the sensing element behind firmware I did not write and cannot easily probe.
 
-Second, it has no software dependency. The Adafruit STEMMA needs a community-maintained external component because its I2C registers are not covered by stock ESPHome. That is a maintenance liability on a rack expected to run unattended, and it puts a third party between me and a working sensor.
+Second, it has no software dependency. The Adafruit STEMMA needs a external component because its I2C registers are not covered by stock ESPHome. That is a maintenance liability on a rack expected to run unattended, and it puts a unnecessary third party between me and a working sensor.
 
-Third, replaceability. At $5.90 with two wires and a power pin, this part can be swapped by anyone with no reflashing and no HA changes, because the entity is defined on the ESP32, not on the probe. The Seeed XIAO is the opposite: swapping it means re-onboarding a new WiFi device.
+Third, replaceability. At $5.90 with two wires and a power pin, this part can be swapped by anyone with no HA changes, because the entity is defined on the ESP32, not on the probe. However, using Seeed XIAO is the opposite: swapping it means re-onboarding a new WiFi device.
 
-The tradeoff I am accepting is that Option C would be less work to set up and Option A gives a second temperature reading for free. Neither outweighs owning the signal path.
+The tradeoff I am accepting is that Option C would be less work to set up and Option A gives a second temperature reading for free. Yet owning the signal path is most preferable.
 
 ---
 
@@ -55,13 +55,11 @@ This sensor shares the same ESP32 as the moisture probe, so it adds no hardware 
 | **Total cost** | No added cost; shares the ESP32 | No added cost | No added cost |
 | **Availability** | Out of stock at Adafruit; orderable through the DigiKey link on the product page | In stock via RS and Mouser | In stock |
 
-**Selected: DS18B20 waterproof probe, ordered via DigiKey (Option A)**
+**Selected: DS18B20 waterproof probe - Non-Native (Option A)**
 
-The decision here is placement, not accuracy. All three options are accurate enough for a decision that only sorts temperature into three bands. What matters is that the probe sits in the substrate next to the moisture sensor, because root zone temperature is what drives evaporation from the medium; ambient air temperature at the top of a rack can be several degrees off. Only the sealed probe formats survive that placement. The DHT20 is cheaper and adds humidity, but it would have to be mounted away from the water, which measures the wrong thing.
+The decision here is placement, not accuracy. What matters is that the probe sits in the substrate next to the moisture sensor, because root zone temperature is what drives evaporation from the medium; ambient air temperature at the top of a rack can be several degrees off. Only the sealed probe formats would thrive in the environment. Therefore, The DHT20 is cheaper and adds humidity, but it would have to be mounted away from the water, which measures the wrong thing.
 
-Between the two DS18B20 options I chose the Adafruit part specifically because counterfeit DS18B20 chips are widespread and behave badly at the edges of their range. Adafruit screens for this, meaning that is worth a few dollars on a part that runs unattended for three weeks.
-
-Note on stock: Adafruit's own page currently shows this out of stock and routes to DigiKey. Budget for the longer lead time or order the DFRobot equivalent.
+Between the two DS18B20 options I chose the Adafruit part specifically because counterfeit DS18B20 chips are widespread, resultin in inaccurate behaviours at the edges. While, Adafruit particularly screens for this. Meaning a few dollars extra would be worthwhile if we plan to run it unattended for periods of time. 
 
 ---
 
@@ -83,7 +81,7 @@ The relay is the smart switch. Home Assistant controls the relay; the relay swit
 
 **Selected: Shelly 1PM Gen3 (Option A)**
 
-The power meter is the reason, and it is not a nice to have. Without it, "pump on" means only that Home Assistant sent a command. With it, HA can confirm the pump actually drew current, which is the difference between believing the plant got watered and knowing it did. Over 21 days unattended, a pump that fails silently is the worst realistic failure in this design, because nothing else in the system would notice. 
+The power meter is the reason, and it proves essential. Without it, "pump on" means only that HA sent a command. With it, HA can confirm the pump actually drew current, which is a significant reason to use the shelly 1pm gen3. A pump failing silently; is realistically a worst case scenario in the design, because nothing else in the system would notice. 
 
 The Sonoff R4 is half the price but routes through a vendor cloud by default, making it local means reflashing it, which adds a failure point and voids the simple story. The MINIR4M is local and cheaper, but has no current sensing, so I would be trading away the failure detection to save seven dollars on a rack running unattended.
 
