@@ -9,7 +9,7 @@
 
 
 Created via Whimsical.com
-
+```
 **Plain description:** Both sensors wire into a single ESP32 board. The ESP32 runs ESPHome firmware, which translates the raw sensor signals into two readable values and sends them to Home Assistant over WiFi. Home Assistant runs the control logic and sends on/off commands to the Shelly relay. The Shelly relay switches the pump.
 
 
