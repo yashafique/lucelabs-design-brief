@@ -5,7 +5,7 @@
 ## Block diagram
 
 ```
-<img width="1973" height="798" alt="image" src="https://github.com/user-attachments/assets/5a6a5152-6ec5-41c7-9707-bb0c08e62b6e" />
+![System schematic](docs/schematic.png)
 
 ```
 Created via Whimsical.com
