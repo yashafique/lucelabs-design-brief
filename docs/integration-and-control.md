@@ -5,7 +5,7 @@
 ## Block diagram
 
 ```
-![System schematic](schematic.png)
+![System schematic](Schematic.png)
 
 ```
 Created via Whimsical.com
