@@ -5,7 +5,7 @@
 
 ## Design summary
 
-**Moisture sensor** reads whether the soil is dry. **Temperature sensor** reads how hot it is at the root zone. Together they control one output: the irrigation pump. Moisture decides whether to water at all. Temperature decides how long the cycle runs, because warmer air pulls water out of the substrate faster. Both readings drive the same decision.
+**Moisture sensor** reads whether the soil is dry. **Temperature sensor** reads how hot it is at the root zone. Together they control one output: the irrigation pump. Moisture decides whether to water at all. Temperature decides how long the cycle runs, because warmer air pulls water out of the substrate faster. Both readings drive the same decision, as this is not two separate loops.
 
 ---
 
