@@ -5,26 +5,10 @@
 ## Block diagram
 
 ```
-                        +-------------------------+
-[SEN0193 Moisture]      |                         |
-  analog voltage        |       ESP32 Bridge      |
-  ──────────────►  ADC  |  (ESPHome firmware)     |
-                        |                         |  WiFi / ESPHome API
-[DS18B20 Temp Probe]    |  exposes two entities:  | ──────────────────────►  [Home Assistant]
-  1-Wire signal         |  - rack_soil_moisture   |                              │
-  ──────────────► GPIO  |  - rack_temperature     |                              │
-                        +-------------------------+                              │
-                                                                                 │ automation
-                                                                                 ▼
-                                                                    [Shelly 1PM Gen3]
-                                                                    WiFi relay; turns
-                                                                    irrigation pump
-                                                                    on or off
-                                                                         │
-                                                                         ▼
-                                                                    [Irrigation Pump]
-                                                                    120V submersible
+<img width="1973" height="798" alt="image" src="https://github.com/user-attachments/assets/5a6a5152-6ec5-41c7-9707-bb0c08e62b6e" />
+
 ```
+Created via Whimsical.com
 
 **Plain description:** Both sensors wire into a single ESP32 board. The ESP32 runs ESPHome firmware, which translates the raw sensor signals into two readable values and sends them to Home Assistant over WiFi. Home Assistant runs the control logic and sends on/off commands to the Shelly relay. The Shelly relay switches the pump.
 
