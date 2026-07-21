@@ -1,21 +1,28 @@
 # ESPHome Bridge Node
-# Reads the DFRobot SEN0193 moisture sensor (analog) and the DS18B20 temperature probe (1-Wire).
-# Both sensors appear in Home Assistant as native entities once this device connects to WiFi.
 #
-# Note on DS18B20 syntax: as of ESPHome v2024.6.0, the old "platform: dallas" syntax was removed.
-# The correct current syntax uses a "one_wire:" bus block and "platform: dallas_temp".
-# Using the old syntax will cause a compile error on any ESPHome version from mid-2024 onward.
+# Reads two non-native sensors and publishes them to Home Assistant as native entities:
+#   - DFRobot SEN0193 capacitive soil moisture sensor (analog, GPIO34)
+#   - DS18B20 waterproof temperature probe (1-Wire, GPIO4, 4.7k pull-up to 3.3V)
+#
+# Two syntax notes, both breaking changes that older examples online still get wrong:
+#   1. "platform: dallas" was removed in ESPHome 2024.6.0. Use a "one_wire:" bus
+#      and a "dallas_temp" sensor under "sensor:".
+#   2. ADC attenuation "11db" was renamed "12db" in ESPHome 2024.x. The old value
+#      still works but is deprecated.
 
 esphome:
   name: rack-sensor-bridge
   friendly_name: "Rack Sensor Bridge"
 
 esp32:
-  board: esp32dev  # swap to your actual board if different, e.g. seeed_xiao_esp32c3
+  board: esp32dev
 
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
+  # If WiFi is lost for 15 minutes the node reboots and retries.
+  # Relevant for 21-day unattended operation.
+  reboot_timeout: 15min
 
   ap:
     ssid: "Rack Bridge Fallback"
@@ -28,47 +35,55 @@ logger:
 api:
   encryption:
     key: !secret api_key
+  # If HA does not connect for 15 minutes, reboot rather than sit in a bad state.
+  reboot_timeout: 15min
 
 ota:
   - platform: esphome
     password: !secret ota_password
 
-# ---
-# Moisture sensor: DFRobot SEN0193
-# Wired to GPIO34 (ADC-capable pin on ESP32).
-# Raw reading: ~3100 in air (dry), ~1200 fully submerged (wet).
-# The filters block converts the raw ADC value to a 0-100% moisture scale.
-# Calibrate the dry_value and wet_value against your actual soil and substrate.
-# ---
-sensor:
-  - platform: adc
-    pin: GPIO34
-    name: "Rack Soil Moisture"
-    id: rack_moisture
-    unit_of_measurement: "%"
-    icon: mdi:water-percent
-    update_interval: 60s
-    attenuation: 11db          # needed for GPIO34 to read up to 3.3V
-    filters:
-      - calibrate_linear:
-          - 3.10 -> 0.0        # dry: replace 3.10 with your actual dry reading in volts
-          - 1.20 -> 100.0      # wet: replace 1.20 with your actual wet reading in volts
-      - clamp:
-          min_value: 0
-          max_value: 100
-
-# ---
-# Temperature sensor: DS18B20 waterproof probe
-# Uses the one_wire component (required as of ESPHome v2024.6.0).
-# The probe shares a single GPIO pin with a 4.7k pull-up resistor to 3.3V.
-# ---
+# 1-Wire bus for the DS18B20. Declares the pin only.
+# The sensor itself is defined under "sensor:" below.
 one_wire:
   - platform: gpio
     pin: GPIO4
 
+sensor:
+  # --- Soil moisture: DFRobot SEN0193 ---
+  # Datasheet: supply 3.3-5.5V, analog output 1.2-2.5V.
+  # The relationship is inverse: higher voltage means drier soil.
+  #
+  # The two calibration points below are PLACEHOLDERS derived from the datasheet
+  # range, not measured on a physical unit. Replace them with real readings:
+  # hold the probe in open air for the dry point, submerge the tip for the wet point.
+  - platform: adc
+    pin: GPIO34
+    name: "Soil Moisture"
+    id: rack_moisture
+    unit_of_measurement: "%"
+    device_class: humidity
+    icon: mdi:water-percent
+    update_interval: 60s
+    attenuation: 12db
+    filters:
+      # Median of 5 samples rejects single-sample noise before calibration.
+      - median:
+          window_size: 5
+          send_every: 5
+      - calibrate_linear:
+          - 2.50 -> 0.0     # dry (open air)   <-- replace with measured value
+          - 1.20 -> 100.0   # wet (submerged)  <-- replace with measured value
+      - clamp:
+          min_value: 0
+          max_value: 100
+
+  # --- Temperature: DS18B20 on the 1-Wire bus above ---
+  # The address below is a PLACEHOLDER. On first boot the device prints the real
+  # 64-bit address in the ESPHome log; copy it here.
+  # With a single device on the bus the address line can be omitted entirely.
   - platform: dallas_temp
-    address: 0x0000000000000000  # replace with your sensor's actual 64-bit address
-    name: "Rack Temperature"
+    address: 0x0000000000000000
+    name: "Temperature"
     id: rack_temperature
     unit_of_measurement: "°C"
     accuracy_decimals: 1
