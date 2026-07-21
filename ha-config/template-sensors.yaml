@@ -1,22 +1,56 @@
-# Template Sensors — VPD calculation
-# VPD (kPa) = (1 - RH/100) × 0.6108 × exp(17.27 × T / (T + 237.3))
-# Both sensor inputs required; if either is unavailable, VPD is marked unknown
+# Template Sensors - Rack irrigation helpers
+#
+# Calculated values derived from the two real sensors. Used by the dashboard
+# so system state is readable at a glance without opening the automation trace.
 
 template:
   - sensor:
-      - name: "Rack VPD"
-        unique_id: rack_vpd
-        unit_of_measurement: "kPa"
-        icon: mdi:leaf
-        state_class: measurement
+
+      # Plain-language status. Mirrors the automation's own condition order,
+      # so if this says "Ready to irrigate" the automation would fire.
+      - name: "Rack Irrigation Status"
+        unique_id: rack_irrigation_status
+        icon: mdi:water-pump
+        state: >
+          {% set m = states('sensor.rack_soil_moisture') %}
+          {% set t = states('sensor.rack_temperature') %}
+          {% set p = states.switch.rack_pump %}
+
+          {% if m in ['unavailable','unknown','none'] or t in ['unavailable','unknown','none'] %}
+            Sensor offline
+          {% elif m | float(-1) < 0 or m | float(-1) > 100 %}
+            Sensor fault
+          {% elif t | float(-99) < -10 or t | float(-99) > 50 %}
+            Sensor fault
+          {% elif p is none %}
+            Pump unavailable
+          {% elif p.state == 'on' %}
+            Watering now
+          {% elif m | float(0) > 40 %}
+            Wet enough
+          {% elif (now() - p.last_changed).total_seconds() < 600 %}
+            Locked out after watering
+          {% else %}
+            Ready to irrigate
+          {% endif %}
+
+      # How long the next cycle would run, given current temperature.
+      # Mirrors the bands in the automation. If these two ever disagree,
+      # the automation is authoritative.
+      - name: "Rack Next Cycle Duration"
+        unique_id: rack_next_cycle_duration
+        unit_of_measurement: "s"
+        icon: mdi:timer-outline
         state: >
           {% set t = states('sensor.rack_temperature') | float(none) %}
-          {% set rh = states('sensor.rack_humidity') | float(none) %}
-          {% if t is none or rh is none %}
-            unknown
+          {% if t is none %}
+            0
+          {% elif t < 15 %}
+            30
+          {% elif t < 25 %}
+            60
           {% else %}
-            {{ ((1 - rh / 100) * 0.6108 * (2.71828 ** (17.27 * t / (t + 237.3)))) | round(3) }}
+            90
           {% endif %}
         availability: >
-          {{ states('sensor.rack_temperature') not in ['unavailable', 'unknown', 'none']
-             and states('sensor.rack_humidity') not in ['unavailable', 'unknown', 'none'] }}
+          {{ states('sensor.rack_temperature') not in ['unavailable','unknown','none'] }}
