@@ -13,7 +13,7 @@ This design controls one slice of a growing rack. It reads two things from the e
 - **Pump relay:** turns the irrigation pump on or off
 - **Control logic:** lives inside Home Assistant, running on-site
 
-Both sensor readings feed one decision together: 
+Both sensor readings drive a single decision. 
 Hot and dry soil triggers a longer watering cycle. 
 Cool and moist soil skips irrigation entirely.
 
