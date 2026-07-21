@@ -62,7 +62,7 @@ Estimate of time distrubution for design and additonal notes
 | 4. Appendix and polish | AI usage appendix, time log, final consistency pass | 30| |
 | Diagram iterations | Three schematic attempts before the corrected one | 30| First two were architecturally wrong |
 | Testing | Running the automation against faked sensor values in Home Assistant |1 | Virtualization support issue; not compatible with my current machine |
-| **Total** |~8 Hours |
+| **Total** | |~8 Hours|
 
 ---
 
