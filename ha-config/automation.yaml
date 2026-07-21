@@ -1,66 +1,200 @@
-# Home Assistant Automation — VPD-driven fan control
-# Status: placeholder — finalize after component selection
-
-# This automation reads from the VPD template sensor (see template-sensors.yaml)
-# and sets the fan to LOW, HIGH, or OFF based on thresholds.
-# Hysteresis and anti-short-cycling are enforced via input_number helpers.
+# Home Assistant Automations - Rack irrigation slice
+#
+# Design summary:
+#   Moisture decides WHETHER to water. Temperature decides HOW LONG.
+#   Safe state in every failure path is pump off.
+#
+# Anti-oscillation:
+#   - Trigger requires moisture below threshold for 2 continuous minutes.
+#   - No new cycle within 10 minutes of the last one.
 
 automation:
-  - alias: "Rack VPD Fan Control"
-    description: "Adjusts exhaust fan speed based on calculated VPD"
-    mode: single           # prevents overlapping runs
+
+  # ---------------------------------------------------------------
+  # 1. Main irrigation cycle
+  # ---------------------------------------------------------------
+  # Two triggers, deliberately:
+  #   - numeric_state fires on the downward crossing of 40%.
+  #   - time_pattern re-evaluates every 15 minutes.
+  # The second one matters. A numeric_state trigger fires only when the value
+  # CROSSES the threshold. If one cycle does not lift moisture back above 40%,
+  # a crossing never happens again and the plant is never watered again.
+  # Over 21 days unattended that is the difference between working and not.
+  - alias: "Rack Irrigation - Run Cycle"
+    id: rack_irrigation_run_cycle
+    description: "Waters when soil is dry. Cycle length scales with temperature."
+    mode: single
+    max_exceeded: silent
+
     trigger:
-      - platform: state
-        entity_id: sensor.rack_vpd  # from template-sensors.yaml
+      - platform: numeric_state
+        entity_id: sensor.rack_soil_moisture
+        below: 40
+        for: "00:02:00"
+      - platform: time_pattern
+        minutes: "/15"
+
     condition:
-      # Anti-short-cycling: don't act if fan changed state less than 5 minutes ago
+      # Both sensors present and reporting
       - condition: template
         value_template: >
-          {{ (now() - states.fan.rack_exhaust.last_changed).total_seconds() > 300 }}
+          {{ states('sensor.rack_soil_moisture') not in ['unavailable','unknown','none']
+             and states('sensor.rack_temperature') not in ['unavailable','unknown','none'] }}
+
+      # Soil is actually dry
+      - condition: numeric_state
+        entity_id: sensor.rack_soil_moisture
+        below: 40
+
+      # Readings are plausible
+      - condition: numeric_state
+        entity_id: sensor.rack_soil_moisture
+        above: -1
+        below: 101
+      - condition: numeric_state
+        entity_id: sensor.rack_temperature
+        above: -10
+        below: 50
+
+      # Pump exists and has not run in the last 10 minutes.
+      # Written defensively: if the Shelly is missing, this evaluates false
+      # and the pump does not run, which is the safe direction.
+      - condition: template
+        value_template: >
+          {% set p = states.switch.rack_pump %}
+          {{ p is not none and (now() - p.last_changed).total_seconds() > 600 }}
+
     action:
       - choose:
-          # VPD too high — run fan at full speed
+          # Cool
           - conditions:
               - condition: numeric_state
-                entity_id: sensor.rack_vpd
-                above: 1.2
+                entity_id: sensor.rack_temperature
+                below: 15
             sequence:
-              - service: fan.set_percentage
-                target:
-                  entity_id: fan.rack_exhaust
-                data:
-                  percentage: 100
+              - service: switch.turn_on
+                target: {entity_id: switch.rack_pump}
+              - delay: "00:00:30"
+              - service: switch.turn_off
+                target: {entity_id: switch.rack_pump}
 
-          # VPD in ideal range — run fan at low speed
+          # Moderate
           - conditions:
               - condition: numeric_state
-                entity_id: sensor.rack_vpd
-                above: 0.4
-                below: 1.2
+                entity_id: sensor.rack_temperature
+                above: 15
+                below: 25
             sequence:
-              - service: fan.set_percentage
-                target:
-                  entity_id: fan.rack_exhaust
-                data:
-                  percentage: 30
+              - service: switch.turn_on
+                target: {entity_id: switch.rack_pump}
+              - delay: "00:01:00"
+              - service: switch.turn_off
+                target: {entity_id: switch.rack_pump}
 
-        # Default (VPD too low — too humid): fan off
-        default:
-          - service: fan.turn_off
-            target:
-              entity_id: fan.rack_exhaust
+          # Warm
+          - conditions:
+              - condition: numeric_state
+                entity_id: sensor.rack_temperature
+                above: 25
+            sequence:
+              - service: switch.turn_on
+                target: {entity_id: switch.rack_pump}
+              - delay: "00:01:30"
+              - service: switch.turn_off
+                target: {entity_id: switch.rack_pump}
 
-  - alias: "Rack Sensor Offline Alert"
-    description: "Alerts if a sensor goes unavailable for more than 5 minutes"
+      # Default is deliberately "do nothing", not "water".
+      # If temperature falls outside every band, the safe answer is no water,
+      # never the longest cycle.
+      default:
+        - service: persistent_notification.create
+          data:
+            title: "Rack Irrigation Skipped"
+            message: >
+              Soil was dry but temperature ({{ states('sensor.rack_temperature') }} C)
+              did not fall into a known band. No water delivered.
+
+  # ---------------------------------------------------------------
+  # 2. Safe state on Home Assistant restart
+  # ---------------------------------------------------------------
+  # This is not cosmetic. The cycle above uses a delay between switch-on and
+  # switch-off. If HA restarts during that delay the automation is killed
+  # mid-run and the pump is left ON indefinitely. This forces it off on boot.
+  - alias: "Rack Safe State - Pump Off On Startup"
+    id: rack_startup_safe_state
+    mode: single
+    trigger:
+      - platform: homeassistant
+        event: start
+    action:
+      - service: switch.turn_off
+        target: {entity_id: switch.rack_pump}
+
+  # ---------------------------------------------------------------
+  # 3. Sensor offline alert
+  # ---------------------------------------------------------------
+  - alias: "Rack Alert - Sensor Offline"
+    id: rack_alert_sensor_offline
+    mode: parallel
     trigger:
       - platform: state
         entity_id:
+          - sensor.rack_soil_moisture
           - sensor.rack_temperature
-          - sensor.rack_humidity
         to: "unavailable"
         for: "00:05:00"
     action:
       - service: persistent_notification.create
         data:
           title: "Rack Sensor Offline"
-          message: "{{ trigger.entity_id }} has been unavailable for 5 minutes. Check the device."
+          message: >
+            {{ trigger.entity_id }} has been unavailable for 5 minutes.
+            Irrigation is suspended until it recovers.
+
+  # ---------------------------------------------------------------
+  # 4. Pump commanded on but drawing no power
+  # ---------------------------------------------------------------
+  # Switches the pump back off rather than leaving a dead relay energised.
+  - alias: "Rack Fault - Pump Did Not Start"
+    id: rack_fault_pump_no_power
+    mode: single
+    trigger:
+      - platform: state
+        entity_id: switch.rack_pump
+        to: "on"
+        for: "00:00:05"
+    condition:
+      - condition: numeric_state
+        entity_id: sensor.rack_pump_power
+        below: 5
+    action:
+      - service: switch.turn_off
+        target: {entity_id: switch.rack_pump}
+      - service: persistent_notification.create
+        data:
+          title: "Rack Pump Fault"
+          message: "Pump was commanded on but drew no power. Switched back off. Check wiring and pump."
+
+  # ---------------------------------------------------------------
+  # 5. Pump drawing power while commanded off
+  # ---------------------------------------------------------------
+  # Software cannot fix a welded relay. This exists to summon a human.
+  - alias: "Rack Fault - Pump Stuck On"
+    id: rack_fault_pump_stuck_on
+    mode: single
+    trigger:
+      - platform: numeric_state
+        entity_id: sensor.rack_pump_power
+        above: 5
+        for: "00:00:10"
+    condition:
+      - condition: state
+        entity_id: switch.rack_pump
+        state: "off"
+    action:
+      - service: persistent_notification.create
+        data:
+          title: "Rack Pump Fault - URGENT"
+          message: >
+            Pump is drawing power while commanded off. The relay or pump may have
+            failed closed. This cannot be corrected in software. Physical check required.
