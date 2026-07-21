@@ -1,50 +1,56 @@
-# Lovelace Dashboard — Rack Monitor
-# Paste this into HA > Settings > Dashboards > (edit) > Raw configuration editor
+# Lovelace Dashboard - Rack Monitor
+# Paste into Settings > Dashboards > (edit) > Raw configuration editor
 
 title: Rack Monitor
 views:
   - title: Growing Rack
     icon: mdi:sprout
     cards:
-      - type: entities
-        title: Environmental Readings
-        entities:
-          - entity: sensor.rack_temperature
-            name: Air Temperature
-          - entity: sensor.rack_humidity
-            name: Relative Humidity
-          - entity: sensor.rack_vpd
-            name: VPD (calculated)
 
+      - type: entity
+        name: System Status
+        entity: sensor.rack_irrigation_status
+
+      - type: entities
+        title: Sensor Readings
+        entities:
+          - entity: sensor.rack_soil_moisture
+            name: Soil Moisture
+          - entity: sensor.rack_temperature
+            name: Root Zone Temperature
+          - entity: sensor.rack_next_cycle_duration
+            name: Next Cycle Length
+
+      # Colour bands mark the 40% trigger point.
       - type: gauge
-        title: VPD
-        entity: sensor.rack_vpd
+        title: Soil Moisture
+        entity: sensor.rack_soil_moisture
         min: 0
-        max: 2
+        max: 100
         needle: true
         segments:
           - from: 0
-            color: "#2196F3"   # blue = too humid
-          - from: 0.4
-            color: "#4CAF50"   # green = ideal
-          - from: 1.2
-            color: "#F44336"   # red = too dry
+            color: "#F44336"   # below trigger, will water
+          - from: 40
+            color: "#4CAF50"   # above trigger, no action
 
       - type: entities
-        title: Actuator
+        title: Pump
         entities:
-          - entity: fan.rack_exhaust
-            name: Exhaust Fan
+          - entity: switch.rack_pump
+            name: Irrigation Pump
+          - entity: sensor.rack_pump_power
+            name: Power Draw
 
+      # Power draw is on this graph on purpose. Comparing commanded state
+      # against actual watts is how a silently failed pump becomes visible.
       - type: history-graph
-        title: Temperature & Humidity (24h)
+        title: Last 24 hours
         hours_to_show: 24
         entities:
+          - entity: sensor.rack_soil_moisture
+            name: Moisture
           - entity: sensor.rack_temperature
-          - entity: sensor.rack_humidity
-
-      - type: history-graph
-        title: VPD (24h)
-        hours_to_show: 24
-        entities:
-          - entity: sensor.rack_vpd
+            name: Temperature
+          - entity: sensor.rack_pump_power
+            name: Pump watts
