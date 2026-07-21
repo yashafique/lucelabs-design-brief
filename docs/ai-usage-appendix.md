@@ -26,12 +26,6 @@ What it produced and how I used/modified it: This gave me the first draft of the
 What it produced and how I used/modified it: I had written a bench-test order in the design doc, but I hadn't actually worked out how to run any of it myself. This question got me a concrete testing two-stage plan, using HA helpers to fake sensor values and test the control logic without any hardware, and a second path for real calibration once I have the actual parts. 
 ---
 
-**Prompt 3:**
-> *(Paste a third real prompt)*
-
-What it produced and how I used/modified it: TBD
-
----
 
 ## Where AI was wrong — and how I caught it
 
